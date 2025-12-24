@@ -22,13 +22,18 @@ st.set_page_config(
 # API 配置
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest")
-VISION_MODEL = "gpt-4o"  # 用于图片识别
+MISTRAL_VISION_MODEL = "pixtral-large-latest"  # Mistral 的视觉模型
 DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")
 
 # 检查配置
 if not OPENAI_API_KEY:
     st.error("❌ 未配置 OPENAI_API_KEY")
+    st.stop()
+
+if not MISTRAL_API_KEY:
+    st.error("❌ 未配置 MISTRAL_API_KEY（图像识别需要）")
     st.stop()
 
 if not DEEPSEEK_API_KEY:
@@ -134,30 +139,36 @@ def encode_image_to_base64(image_file):
     return base64.b64encode(buffered.getvalue()).decode('utf-8')
 
 def extract_text_from_image(image_file):
-    """使用 GPT-4 Vision 从图片中提取数学题目"""
+    """使用 Mistral Pixtral 从图片中提取数学题目"""
     try:
-        client = OpenAI(api_key=OPENAI_API_KEY)
+        # 使用 Mistral API（兼容 OpenAI SDK）
+        client = OpenAI(
+            api_key=MISTRAL_API_KEY,
+            base_url="https://api.mistral.ai/v1"
+        )
         
         # 将图片转换为 base64
         base64_image = encode_image_to_base64(image_file)
         
         response = client.chat.completions.create(
-            model=VISION_MODEL,
+            model=MISTRAL_VISION_MODEL,
             messages=[
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": """请仔细识别图片中的数学题目。
+                            "text": """You are an expert OCR system for mathematical content. Please carefully extract ALL text from this image.
 
-要求：
-1. 准确识别所有文字、数学符号、公式
-2. 保持原题目的格式和结构
-3. 如果有图表，请描述图表内容
-4. 只输出题目内容，不要添加任何解答或说明
+CRITICAL REQUIREMENTS:
+1. Extract ALL visible text, formulas, and mathematical symbols
+2. Preserve the exact structure and formatting
+3. Use proper mathematical notation (e.g., ∠ABC, °, √, ∫, etc.)
+4. If there are diagrams, describe them briefly
+5. Include ALL text - do NOT refuse or skip any content
+6. Output ONLY the extracted text, no explanations
 
-请直接输出识别的题目文字："""
+Extract the complete mathematical problem from the image:"""
                         },
                         {
                             "type": "image_url",
@@ -168,13 +179,35 @@ def extract_text_from_image(image_file):
                     ]
                 }
             ],
-            max_tokens=1000
+            max_tokens=2000,
+            temperature=0.1
         )
         
-        return response.choices[0].message.content
+        extracted = response.choices[0].message.content.strip()
+        
+        # 检查返回内容
+        if not extracted or len(extracted) < 10:
+            return "❌ 识别失败：返回内容过短，请重新上传图片或使用文字输入"
+        
+        # 检查是否拒绝识别
+        refusal_keywords = ["sorry", "can't", "cannot", "unable", "refuse"]
+        if any(keyword in extracted.lower() for keyword in refusal_keywords):
+            return f"❌ Mistral 拒绝识别此图片\n\n返回内容: {extracted}\n\n💡 请使用文字输入功能"
+        
+        return extracted
     
     except Exception as e:
-        return f"❌ 图片识别失败: {str(e)}"
+        return f"""❌ 图片识别失败: {str(e)}
+
+💡 可能的原因：
+1. Mistral API Key 配置错误
+2. 网络连接问题
+3. 图片格式不支持
+
+🔧 解决方案：
+1. 使用 **文字输入** 功能手动输入题目
+2. 检查 Mistral API Key 是否正确
+3. 尝试重新上传更清晰的图片"""
 
 def call_openai_api(prompt, api_key, model, base_url="https://api.openai.com/v1"):
     """调用 API（支持 OpenAI 和 DeepSeek）"""
@@ -216,7 +249,7 @@ st.markdown("---")
 with st.sidebar:
     st.header("⚙️ 系统配置")
     st.info(f"**GPT模型**: {OPENAI_MODEL}")
-    st.info(f"**Vision模型**: {VISION_MODEL}")
+    st.success(f"**Vision模型**: Mistral Pixtral 📷")
     if DUAL_MODEL_ENABLED:
         st.success(f"**DeepSeek R1**: {DEEPSEEK_MODEL} ✅")
         st.info("🌐 R1 支持联网搜索")
@@ -288,7 +321,7 @@ with col1:
             
             # OCR 识别按钮
             if st.button("🤖 AI识别题目", type="primary", use_container_width=True):
-                with st.spinner("🔍 GPT-4o 正在识别图片中的题目..."):
+                with st.spinner("🔍 Mistral Pixtral 正在识别图片中的题目..."):
                     extracted_text = extract_text_from_image(uploaded_file)
                     st.session_state['extracted_text'] = extracted_text
             
@@ -542,7 +575,7 @@ st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: gray;'>
     <p><strong>数学题目审核系统</strong> - 图片识别版</p>
-    <p>支持文字输入 + 图片上传 | GPT-5.1 + DeepSeek R1 | AI OCR识别</p>
+    <p>支持文字输入 + 图片上传 | GPT-5.1 + DeepSeek R1 | Mistral Pixtral OCR</p>
 </div>
 """, unsafe_allow_html=True)
 
