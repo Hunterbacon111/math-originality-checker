@@ -1,0 +1,9 @@
+{"id": "math_001", "difficulty": "easy", "correct_count": 8, "pass_rate": "80%", "ground_truth": "x = 5"}
+{"id": "math_002", "difficulty": "easy", "correct_count": 7, "pass_rate": "70%", "ground_truth": "5"}
+{"id": "math_003", "difficulty": "medium", "correct_count": 4, "pass_rate": "40%", "ground_truth": "4"}
+{"id": "math_004", "difficulty": "medium", "correct_count": 3, "pass_rate": "30%", "ground_truth": "最小值为 -1，当 x = 2 时取得"}
+{"id": "math_005", "difficulty": "hard", "correct_count": 2, "pass_rate": "20%", "ground_truth": "证明：n³ - n = n(n²-1) = n(n-1)(n+1)，这是三个连续整数的乘积"}
+{"id": "math_006", "difficulty": "hard", "correct_count": 1, "pass_rate": "10%", "ground_truth": "y = (e^x)/3 + (2/3)e^(-2x)"}
+{"id": "math_007", "difficulty": "medium", "correct_count": 0, "pass_rate": "0%", "ground_truth": "题目不完整"}
+{"id": "math_008", "difficulty": "medium", "correct_count": 4, "pass_rate": "40%", "ground_truth": "1/2"}
+

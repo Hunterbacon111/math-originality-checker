@@ -1,0 +1,43 @@
+[
+  {
+    "id": "math_001",
+    "problem_text": "求解方程：3x + 5 = 20，求 x 的值。",
+    "difficulty": "easy"
+  },
+  {
+    "id": "math_002",
+    "problem_text": "在一个直角三角形中，两条直角边的长度分别为 3 和 4，求斜边的长度。",
+    "difficulty": "easy"
+  },
+  {
+    "id": "math_003",
+    "problem_text": "计算定积分：∫₀¹ (2x + 3) dx",
+    "difficulty": "medium"
+  },
+  {
+    "id": "math_004",
+    "problem_text": "已知函数 f(x) = x² - 4x + 3，求该函数的最小值及取得最小值时的 x 值。",
+    "difficulty": "medium"
+  },
+  {
+    "id": "math_005",
+    "problem_text": "证明：对于任意正整数 n，n³ - n 能被 6 整除。",
+    "difficulty": "hard"
+  },
+  {
+    "id": "math_006",
+    "problem_text": "求解微分方程：dy/dx + 2y = e^x，其中 y(0) = 1",
+    "difficulty": "hard"
+  },
+  {
+    "id": "math_007",
+    "problem_text": "有一个不规则的图形，面积为 12，周长为",
+    "difficulty": "medium"
+  },
+  {
+    "id": "math_008",
+    "problem_text": "计算 lim(x→∞) [(x² + 3x + 1) / (2x² - x + 5)]",
+    "difficulty": "medium"
+  }
+]
+

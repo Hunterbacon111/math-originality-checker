@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  streamlit:
+    build: .
+    container_name: math-originality-checker
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-5.1-chat-latest}
+      # Supabase (如果需要)
+      # - SUPABASE_URL=${SUPABASE_URL}
+      # - SUPABASE_KEY=${SUPABASE_KEY}
+    restart: unless-stopped
+    volumes:
+      # 可选：挂载数据目录以持久化日志
+      - ./logs:/app/logs
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
