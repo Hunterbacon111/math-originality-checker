@@ -20,7 +20,8 @@ st.set_page_config(
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.1-chat-latest")
-DEEPSEEK_MODEL = "deepseek-chat"
+# 使用 DeepSeek R1 - 具有联网搜索功能的推理模型
+DEEPSEEK_MODEL = os.getenv("DEEPSEEK_MODEL", "deepseek-chat")  # deepseek-chat 当前指向 R1
 
 # 检查配置
 if not OPENAI_API_KEY:
@@ -155,7 +156,7 @@ def get_originality_emoji(conclusion):
 
 # 主界面
 st.title("🔍 数学题目审核系统 - 双模型版")
-st.markdown("**GPT-5.1 + DeepSeek V3 交叉验证**")
+st.markdown("**GPT-5.1 + DeepSeek R1 交叉验证**")
 st.markdown("---")
 
 # 侧边栏
@@ -163,7 +164,8 @@ with st.sidebar:
     st.header("⚙️ 系统配置")
     st.info(f"**GPT模型**: {OPENAI_MODEL}")
     if DUAL_MODEL_ENABLED:
-        st.success(f"**DeepSeek**: {DEEPSEEK_MODEL} ✅")
+        st.success(f"**DeepSeek R1**: {DEEPSEEK_MODEL} ✅")
+        st.info("🌐 R1 支持联网搜索")
     else:
         st.warning("**DeepSeek**: 未配置")
     
@@ -279,10 +281,10 @@ with col2:
             with st.spinner("🔍 GPT-5.1 正在检测..."):
                 gpt_result = call_openai_api(prompt, OPENAI_API_KEY, OPENAI_MODEL)
             
-            # DeepSeek 检测
+            # DeepSeek R1 检测（支持联网搜索）
             deepseek_result = None
             if DUAL_MODEL_ENABLED:
-                with st.spinner("🔍 DeepSeek V3 正在检测..."):
+                with st.spinner("🔍 DeepSeek R1 正在检测（联网搜索中）..."):
                     deepseek_result = call_openai_api(
                         prompt, 
                         DEEPSEEK_API_KEY, 
@@ -291,7 +293,7 @@ with col2:
                     )
             
             # 显示结果
-            tab1, tab2, tab3 = st.tabs(["📊 对比总结", "🤖 GPT-5.1", "🤖 DeepSeek V3"])
+            tab1, tab2, tab3 = st.tabs(["📊 对比总结", "🤖 GPT-5.1", "🌐 DeepSeek R1"])
             
             with tab1:
                 st.markdown("#### 🎯 双模型对比")
@@ -314,7 +316,7 @@ with col2:
                                      delta=get_originality_emoji(gpt_conclusion))
                         
                         with comp_col2:
-                            st.metric("DeepSeek V3", ds_conclusion,
+                            st.metric("DeepSeek R1 🌐", ds_conclusion,
                                      delta=get_originality_emoji(ds_conclusion))
                         
                         with comp_col3:
@@ -454,7 +456,7 @@ st.markdown("---")
 st.markdown("""
 <div style='text-align: center; color: gray;'>
     <p><strong>数学题目审核系统</strong> - 双模型交叉验证版本</p>
-    <p>GPT-5.1 + DeepSeek V3 | 更准确 | 更可靠</p>
+    <p>GPT-5.1 + DeepSeek R1 🌐 | 更准确 | 更可靠</p>
 </div>
 """, unsafe_allow_html=True)
 
