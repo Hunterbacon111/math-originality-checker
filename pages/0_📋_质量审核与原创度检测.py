@@ -147,6 +147,8 @@ ORIGINALITY_PROMPT_DEEPSEEK = """你是一名严谨的学术查重专家。你�
 
 Task: 在你的知识库中检索是否存在与以下题目相似的内容。
 
+**重要：请严格按照 JSON 格式输出结果（JSON format required）。**
+
 **题目内容**:
 {problem_text}
 
@@ -156,7 +158,9 @@ Task: 在你的知识库中检索是否存在与以下题目相似的内容。
 3. 不要基于推测或想象提供来源
 4. 链接必须是真实存在的（如果不确定链接是否存在，就不要提供）
 
-**输出格式**:
+**输出格式（JSON format）**:
+请严格按照以下 JSON 结构输出：
+
 {{
   "originality_conclusion": "原创 / 疑似搬运 / 结构雷同",
   "similar_problems": [
@@ -263,15 +267,22 @@ Extract the complete mathematical problem from the image:"""
 2. 检查 Mistral API Key 是否正确
 3. 尝试重新上传更清晰的图片"""
 
-def call_openai_api(prompt, api_key, model, base_url="https://api.openai.com/v1"):
+def call_openai_api(prompt, api_key, model, base_url="https://api.openai.com/v1", use_json_format=True):
     """调用 API（支持 OpenAI 和 DeepSeek）"""
     try:
         client = OpenAI(api_key=api_key, base_url=base_url)
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
-        )
+        
+        # 构建请求参数
+        request_params = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        
+        # 只有在明确要求 JSON 格式时才添加 response_format
+        if use_json_format:
+            request_params["response_format"] = {"type": "json_object"}
+        
+        response = client.chat.completions.create(**request_params)
         return response.choices[0].message.content
     except Exception as e:
         return {"error": str(e)}
