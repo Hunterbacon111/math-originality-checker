@@ -29,7 +29,8 @@ st.set_page_config(
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
 DOUBAO_API_KEY_1 = os.getenv("DOUBAO_API_KEY_1")  # Doubao 一号
 DOUBAO_API_KEY_2 = os.getenv("DOUBAO_API_KEY_2")  # Doubao 二号
-DOUBAO_MODEL = "ep-m-20251211112628-2r5n6"  # 豆包 Seed 1.6 Thinking 端点
+DOUBAO_MODEL_1 = "ep-m-20251211112628-2r5n6"  # Doubao 一号端点
+DOUBAO_MODEL_2 = "ep-m-20251225141150-hfztd"  # Doubao 二号端点
 MISTRAL_VISION_MODEL = "pixtral-large-latest"
 
 # 检查配置
@@ -38,12 +39,12 @@ if not DOUBAO_API_KEY_1 and not DOUBAO_API_KEY_2:
     st.info("请在服务器的 .env 文件中添加：DOUBAO_API_KEY_1 和/或 DOUBAO_API_KEY_2")
     st.stop()
 
-# 确定可用的 API
+# 确定可用的 API（名称、API Key、端点ID）
 AVAILABLE_APIS = []
 if DOUBAO_API_KEY_1:
-    AVAILABLE_APIS.append(("🤖 Doubao 一号", DOUBAO_API_KEY_1))
+    AVAILABLE_APIS.append(("🤖 Doubao 一号", DOUBAO_API_KEY_1, DOUBAO_MODEL_1))
 if DOUBAO_API_KEY_2:
-    AVAILABLE_APIS.append(("🤖 Doubao 二号", DOUBAO_API_KEY_2))
+    AVAILABLE_APIS.append(("🤖 Doubao 二号", DOUBAO_API_KEY_2, DOUBAO_MODEL_2))
 
 def encode_image_to_base64(image_file):
     """将上传的图片转换为 base64"""
@@ -92,7 +93,7 @@ def extract_text_from_image(image_file):
     except Exception as e:
         return f"❌ 图片识别失败: {str(e)}"
 
-def solve_problem_with_doubao(problem_text, attempt_number, api_key):
+def solve_problem_with_doubao(problem_text, attempt_number, api_key, model_id):
     """使用 Doubao Seed 1.6 Thinking 模型求解题目（单次）"""
     try:
         client = OpenAI(
@@ -103,7 +104,7 @@ def solve_problem_with_doubao(problem_text, attempt_number, api_key):
         start_time = time.time()
         
         response = client.chat.completions.create(
-            model=DOUBAO_MODEL,
+            model=model_id,
             messages=[
                 {
                     "role": "system",
@@ -197,18 +198,18 @@ with st.sidebar:
             format_func=lambda x: AVAILABLE_APIS[x][0],
             key="api_selector"
         )
-        selected_api_name, selected_api_key = AVAILABLE_APIS[api_choice]
+        selected_api_name, selected_api_key, selected_model = AVAILABLE_APIS[api_choice]
         st.info(f"✅ 使用：**{selected_api_name}**")
     else:
         api_choice = 0
-        selected_api_name, selected_api_key = AVAILABLE_APIS[0]
+        selected_api_name, selected_api_key, selected_model = AVAILABLE_APIS[0]
         st.info(f"**API**: {selected_api_name} ✅")
     
     st.markdown("---")
     
     # API 状态显示
     st.subheader("📊 API 状态")
-    for idx, (name, key) in enumerate(AVAILABLE_APIS):
+    for idx, (name, key, model) in enumerate(AVAILABLE_APIS):
         icon = "🟢" if idx == api_choice else "⚪"
         st.text(f"{icon} {name}")
     
@@ -352,9 +353,9 @@ with col2:
             start_time = time.time()
             
             with ThreadPoolExecutor(max_workers=min(test_count, 8)) as executor:
-                # 提交所有任务（使用选择的 API Key）
+                # 提交所有任务（使用选择的 API Key 和端点）
                 futures = {
-                    executor.submit(solve_problem_with_doubao, problem_text, i+1, selected_api_key): i+1 
+                    executor.submit(solve_problem_with_doubao, problem_text, i+1, selected_api_key, selected_model): i+1 
                     for i in range(test_count)
                 }
                 
