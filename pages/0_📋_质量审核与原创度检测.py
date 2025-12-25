@@ -135,28 +135,30 @@ Task: 请针对我提供的题目进行深度分析，查验该题目的原创�
 3. 严禁在任何字段中包含解题步骤或答案！
 """
 
-# 原创度检测 Prompt - DeepSeek R1 版本（强调准确性）
+# 原创度检测 Prompt - DeepSeek R1 版本（平衡准确性与查重能力）
 ORIGINALITY_PROMPT_DEEPSEEK = """你是一名严谨的学术查重专家。你的任务是分析题目的原创度。
 
-⚠️ **极其重要的警告**：
-1. **绝对禁止编造或臆测来源信息**
-2. **只有在100%确定的情况下才能说"找到相似题目"**
-3. **不确定时，必须明确说"未找到相似题目"或"原创"**
-4. **提供的链接必须是你确切知道存在的，不要编造URL**
-5. **宁可保守也不要给出虚假信息**
-
-Task: 在你的知识库中检索是否存在与以下题目相似的内容。
+⚠️ **重要原则**：
+1. **准确性第一**：不要编造不存在的具体链接（如完整URL）
+2. **可以发现相似性**：如果题目结构、逻辑、考点与你知识库中的内容相似，应该指出
+3. **来源分级处理**：
+   - ✅ **确定来源**：如果你明确知道来自某本教材、某个竞赛、某个知名题库，可以说明（但不要编造具体页码或题号）
+   - ⚠️ **结构相似**：如果只是发现题目类型、解题思路相似，但记不清具体出处，可以说"结构雷同"并分析相似点
+   - ❌ **原创**：如果确实没有印象，才判定为原创
 
 **重要：请严格按照 JSON 格式输出结果（JSON format required）。**
 
 **题目内容**:
 {problem_text}
 
-**严格检索要求**:
-1. 只检索你训练数据中**确实存在**的相似题目
-2. 如果不确定或没有找到，直接返回"原创"结论
-3. 不要基于推测或想象提供来源
-4. 链接必须是真实存在的（如果不确定链接是否存在，就不要提供）
+**检索策略**:
+1. 分析题目的核心考点、逻辑结构、设定背景
+2. 在你的知识库中搜索类似的题目或题型
+3. 如果发现相似内容：
+   - 说明相似之处（考点、结构、设定等）
+   - 如果记得大致来源（如"高考真题""AMC竞赛""微积分教材"），可以说明
+   - 如果不记得具体出处，就说"来源：记忆中见过类似题型，但无法提供准确出处"
+4. **绝对不要编造完整的URL、具体的题号、页码**
 
 **输出格式（JSON format）**:
 请严格按照以下 JSON 结构输出：
@@ -165,26 +167,28 @@ Task: 在你的知识库中检索是否存在与以下题目相似的内容。
   "originality_conclusion": "原创 / 疑似搬运 / 结构雷同",
   "similar_problems": [
     {{
-      "source": "来源名称（必须确切知道）",
-      "source_url": "具体链接或详细出处（如果不确定链接，写'出处待确认'）",
-      "content": "相似题目的简要描述",
-      "similarity_percentage": 85,
-      "similarity_reason": "相似之处的具体说明",
-      "confidence_level": "高/中/低（你对此来源真实性的信心）"
+      "source": "来源类型（如'高考真题''竞赛题库''微积分教材'等，如果只是题型相似就写'常见题型'）",
+      "source_url": "【如果你确切知道来源】写详细出处（如'2018年全国卷I''AMC 12 2020'）；【如果不确定具体出处】写'记忆中见过类似，但无准确出处'；【绝对不要】编造具体网址链接",
+      "content": "相似题目的核心特征描述（不要给出完整题目）",
+      "similarity_percentage": 70,
+      "similarity_reason": "详细说明相似之处（考点、结构、逻辑、设定等）",
+      "confidence_level": "高（确定见过）/中（印象中有类似）/低（仅题型相似）"
     }}
   ],
-  "unique_aspects": ["列出题目的独特之处"],
-  "keyword_analysis": "关键词分析",
-  "structure_analysis": "题目结构分析",
-  "overall_assessment": "整体评估",
-  "search_note": "说明你的检索过程和结果可靠性"
+  "unique_aspects": ["列出题目的独特之处或创新点"],
+  "keyword_analysis": "核心考点和关键概念",
+  "structure_analysis": "题目的逻辑结构和解题思路",
+  "overall_assessment": "综合评估（既要指出相似性，也要指出独特性）",
+  "search_note": "你的检索思路和判断依据"
 }}
 
-**再次强调**：
-- ❌ 不要编造 artofproblemsolving.com、zhihu.com 等网站的具体链接
-- ❌ 不要编造书籍页码和例题编号
-- ✅ 只有真正在训练数据中见过的才能列出
-- ✅ 不确定的情况下，诚实地说"原创"或"无法确定"
+**输出要求**：
+- ✅ **可以**指出题型、考点、结构的相似性
+- ✅ **可以**说"高考常见题型""竞赛经典题型"等笼统来源
+- ✅ **可以**说"记忆中见过类似，但无准确出处"
+- ❌ **不要**编造完整的URL链接（如 https://...）
+- ❌ **不要**编造具体的题号、页码（除非你100%确定）
+- ❌ **不要**因为过于谨慎而把所有题目都判为"原创"
 
 **严禁给出解题步骤或答案！**
 """
@@ -596,12 +600,13 @@ with col2:
                 elif not deepseek_result:
                     st.error("❌ DeepSeek 调用失败")
                 else:
-                    # 添加警告提示
-                    st.warning("""
-                    ⚠️ **DeepSeek R1 结果验证提醒**：
-                    - 请务必验证所有来源链接的真实性
-                    - AI模型可能产生不准确的来源信息
-                    - 建议人工核实后再做判断
+                    # 添加使用说明
+                    st.info("""
+                    💡 **DeepSeek R1 结果说明**：
+                    - 会指出题目的结构、考点、题型相似性
+                    - 对于笼统来源（如"高考常见题型"）可参考，但需人工判断
+                    - 对于具体出处，请务必人工验证
+                    - 置信度越高，参考价值越大
                     """)
                     
                     try:
@@ -627,15 +632,19 @@ with col2:
                                     }.get(confidence, '⚪')
                                     
                                     with st.expander(f"相似题目 {idx} - 相似度: {prob.get('similarity_percentage', 0)}% {confidence_emoji} 置信度: {confidence}"):
-                                        st.markdown(f"**来源**: {prob.get('source', '未知')}")
+                                        st.markdown(f"**来源类型**: {prob.get('source', '未知')}")
                                         source_url = prob.get('source_url', '')
                                         if source_url and source_url.strip():
-                                            # 提醒用户验证链接
-                                            if '待确认' in source_url or not source_url.startswith('http'):
+                                            # 智能识别来源类型
+                                            if '记忆' in source_url or '印象' in source_url or '无准确出处' in source_url:
+                                                st.info(f"📝 **来源说明**: {source_url}")
+                                            elif '待确认' in source_url or '模糊' in source_url:
                                                 st.warning(f"⚠️ **出处**: {source_url}（需人工验证）")
-                                            else:
+                                            elif source_url.startswith('http'):
                                                 st.markdown(f"**链接**: [{source_url}]({source_url}) ⚠️ *请验证链接有效性*")
-                                        st.markdown(f"**题目内容**: {prob.get('content', '无')}")
+                                            else:
+                                                st.markdown(f"**详细出处**: {source_url}")
+                                        st.markdown(f"**相似特征**: {prob.get('content', '无')}")
                                         st.markdown(f"**相似原因**: {prob.get('similarity_reason', '无')}")
                             else:
                                 st.success("✅ 未发现高度相似的题目")
