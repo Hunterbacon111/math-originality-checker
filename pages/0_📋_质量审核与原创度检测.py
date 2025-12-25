@@ -79,8 +79,8 @@ Evaluate the problem based on the 5 criteria above and respond in JSON format:
 **Remember**: Focus on problem quality, NOT answer correctness!
 """
 
-# 原创度检测 Prompt
-ORIGINALITY_PROMPT_TEMPLATE = """你现在是一名资深的学术查重专家和高级搜索工程专家。
+# 原创度检测 Prompt - GPT-5.1 版本
+ORIGINALITY_PROMPT_GPT = """你现在是一名资深的学术查重专家和高级搜索工程专家。
 
 Task: 请针对我提供的题目进行深度分析，查验该题目的原创度（是否在你的知识库中存在原题或高度相似的变体）。
 
@@ -133,6 +133,56 @@ Task: 请针对我提供的题目进行深度分析，查验该题目的原创�
 1. 必须提供具体的来源链接或详细出处
 2. 不要给原创度打分
 3. 严禁在任何字段中包含解题步骤或答案！
+"""
+
+# 原创度检测 Prompt - DeepSeek R1 版本（强调准确性）
+ORIGINALITY_PROMPT_DEEPSEEK = """你是一名严谨的学术查重专家。你的任务是分析题目的原创度。
+
+⚠️ **极其重要的警告**：
+1. **绝对禁止编造或臆测来源信息**
+2. **只有在100%确定的情况下才能说"找到相似题目"**
+3. **不确定时，必须明确说"未找到相似题目"或"原创"**
+4. **提供的链接必须是你确切知道存在的，不要编造URL**
+5. **宁可保守也不要给出虚假信息**
+
+Task: 在你的知识库中检索是否存在与以下题目相似的内容。
+
+**题目内容**:
+{problem_text}
+
+**严格检索要求**:
+1. 只检索你训练数据中**确实存在**的相似题目
+2. 如果不确定或没有找到，直接返回"原创"结论
+3. 不要基于推测或想象提供来源
+4. 链接必须是真实存在的（如果不确定链接是否存在，就不要提供）
+
+**输出格式**:
+{{
+  "originality_conclusion": "原创 / 疑似搬运 / 结构雷同",
+  "similar_problems": [
+    {{
+      "source": "来源名称（必须确切知道）",
+      "source_url": "具体链接或详细出处（如果不确定链接，写'出处待确认'）",
+      "content": "相似题目的简要描述",
+      "similarity_percentage": 85,
+      "similarity_reason": "相似之处的具体说明",
+      "confidence_level": "高/中/低（你对此来源真实性的信心）"
+    }}
+  ],
+  "unique_aspects": ["列出题目的独特之处"],
+  "keyword_analysis": "关键词分析",
+  "structure_analysis": "题目结构分析",
+  "overall_assessment": "整体评估",
+  "search_note": "说明你的检索过程和结果可靠性"
+}}
+
+**再次强调**：
+- ❌ 不要编造 artofproblemsolving.com、zhihu.com 等网站的具体链接
+- ❌ 不要编造书籍页码和例题编号
+- ✅ 只有真正在训练数据中见过的才能列出
+- ✅ 不确定的情况下，诚实地说"原创"或"无法确定"
+
+**严禁给出解题步骤或答案！**
 """
 
 def encode_image_to_base64(image_file):
@@ -423,18 +473,20 @@ with col2:
         else:
             st.markdown("### 🤖 双模型原创度检测")
             
-            prompt = ORIGINALITY_PROMPT_TEMPLATE.format(problem_text=problem_text)
+            # 为不同模型使用不同的 Prompt
+            gpt_prompt = ORIGINALITY_PROMPT_GPT.format(problem_text=problem_text)
+            deepseek_prompt = ORIGINALITY_PROMPT_DEEPSEEK.format(problem_text=problem_text)
             
             # GPT-5.1 检测
             with st.spinner("🔍 GPT-5.1 正在检测..."):
-                gpt_result = call_openai_api(prompt, OPENAI_API_KEY, OPENAI_MODEL)
+                gpt_result = call_openai_api(gpt_prompt, OPENAI_API_KEY, OPENAI_MODEL)
             
-            # DeepSeek R1 检测
+            # DeepSeek R1 检测（使用强调准确性的 Prompt）
             deepseek_result = None
             if DUAL_MODEL_ENABLED:
-                with st.spinner("🔍 DeepSeek R1 正在检测（联网搜索中）..."):
+                with st.spinner("🔍 DeepSeek R1 正在检测（已启用严格验证模式）..."):
                     deepseek_result = call_openai_api(
-                        prompt, 
+                        deepseek_prompt, 
                         DEEPSEEK_API_KEY, 
                         DEEPSEEK_MODEL,
                         base_url="https://api.deepseek.com"
@@ -533,6 +585,14 @@ with col2:
                 elif not deepseek_result:
                     st.error("❌ DeepSeek 调用失败")
                 else:
+                    # 添加警告提示
+                    st.warning("""
+                    ⚠️ **DeepSeek R1 结果验证提醒**：
+                    - 请务必验证所有来源链接的真实性
+                    - AI模型可能产生不准确的来源信息
+                    - 建议人工核实后再做判断
+                    """)
+                    
                     try:
                         ds_data = json.loads(deepseek_result) if isinstance(deepseek_result, str) else deepseek_result
                         
@@ -546,18 +606,33 @@ with col2:
                             if similar_problems:
                                 st.markdown("#### 🔍 发现的相似题目")
                                 for idx, prob in enumerate(similar_problems[:3], 1):
-                                    with st.expander(f"相似题目 {idx} - 相似度: {prob.get('similarity_percentage', 0)}%"):
+                                    # 获取置信度
+                                    confidence = prob.get('confidence_level', '未知')
+                                    confidence_emoji = {
+                                        '高': '🟢',
+                                        '中': '🟡', 
+                                        '低': '🔴',
+                                        '未知': '⚪'
+                                    }.get(confidence, '⚪')
+                                    
+                                    with st.expander(f"相似题目 {idx} - 相似度: {prob.get('similarity_percentage', 0)}% {confidence_emoji} 置信度: {confidence}"):
                                         st.markdown(f"**来源**: {prob.get('source', '未知')}")
                                         source_url = prob.get('source_url', '')
                                         if source_url and source_url.strip():
-                                            if source_url.startswith('http'):
-                                                st.markdown(f"**链接**: [{source_url}]({source_url})")
+                                            # 提醒用户验证链接
+                                            if '待确认' in source_url or not source_url.startswith('http'):
+                                                st.warning(f"⚠️ **出处**: {source_url}（需人工验证）")
                                             else:
-                                                st.markdown(f"**详细出处**: {source_url}")
+                                                st.markdown(f"**链接**: [{source_url}]({source_url}) ⚠️ *请验证链接有效性*")
                                         st.markdown(f"**题目内容**: {prob.get('content', '无')}")
                                         st.markdown(f"**相似原因**: {prob.get('similarity_reason', '无')}")
                             else:
                                 st.success("✅ 未发现高度相似的题目")
+                            
+                            # 显示检索说明（如果有）
+                            search_note = ds_data.get('search_note', '')
+                            if search_note:
+                                st.info(f"🔍 **检索说明**: {search_note}")
                     
                     except Exception as e:
                         st.error(f"❌ 解析 DeepSeek 结果失败: {e}")
