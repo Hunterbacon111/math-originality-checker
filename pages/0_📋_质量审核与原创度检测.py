@@ -14,22 +14,26 @@ from PIL import Image
 import io
 from dotenv import load_dotenv
 
-# 添加父目录到路径以导入 style
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from style import apply_llama_style
-
-# 加载环境变量
-load_dotenv()
-
-# 页面配置
+# 页面配置（必须最先调用）
 st.set_page_config(
     page_title="质量审核与原创度检测",
     page_icon="📋",
     layout="wide"
 )
 
-# 应用 Llama 3.1 风格
-apply_llama_style()
+# 加载环境变量（忽略权限错误）
+try:
+    load_dotenv()
+except Exception:
+    pass  # 如果 .env 文件被保护，从系统环境变量读取
+
+# 添加父目录到路径并导入样式
+try:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from style import apply_llama_style
+    apply_llama_style()
+except Exception:
+    pass  # 如果样式导入失败，使用默认样式
 
 # API 配置
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

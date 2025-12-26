@@ -3,9 +3,8 @@
 数学题目审核系统 - 首页
 """
 import streamlit as st
-from style import apply_llama_style
 
-# 页面配置
+# 页面配置（必须最先调用）
 st.set_page_config(
     page_title="数学题目审核系统",
     page_icon="🔍",
@@ -14,7 +13,11 @@ st.set_page_config(
 )
 
 # 应用 Llama 3.1 风格
-apply_llama_style()
+try:
+    from style import apply_llama_style
+    apply_llama_style()
+except Exception:
+    pass  # 如果样式导入失败，使用默认样式
 
 # 主标题
 st.title("🔍 数学题目审核系统")
