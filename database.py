@@ -5,6 +5,10 @@ import os
 import hashlib
 from datetime import datetime
 from typing import Optional, List, Dict
+from dotenv import load_dotenv
+
+# 加载环境变量（确保在初始化前加载）
+load_dotenv()
 
 try:
     from supabase import create_client, Client
