@@ -10,32 +10,20 @@ import os
 import base64
 import io
 import time
-import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openai import OpenAI
 from PIL import Image
 from dotenv import load_dotenv
 
-# 页面配置（必须最先调用）
+# 加载环境变量
+load_dotenv()
+
+# 页面配置
 st.set_page_config(
     page_title="难度测试 - 数学题目审核系统",
     page_icon="🎯",
     layout="wide"
 )
-
-# 加载环境变量（忽略权限错误）
-try:
-    load_dotenv()
-except Exception:
-    pass  # 如果 .env 文件被保护，从系统环境变量读取
-
-# 添加父目录到路径并导入样式
-try:
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from style import apply_llama_style
-    apply_llama_style()
-except Exception:
-    pass  # 如果样式导入失败，使用默认样式
 
 # API 配置
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")

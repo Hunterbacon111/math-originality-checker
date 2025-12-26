@@ -4,20 +4,13 @@
 """
 import streamlit as st
 
-# 页面配置（必须最先调用）
+# 页面配置
 st.set_page_config(
     page_title="数学题目审核系统",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# 应用 Llama 3.1 风格
-try:
-    from style import apply_llama_style
-    apply_llama_style()
-except Exception:
-    pass  # 如果样式导入失败，使用默认样式
 
 # 主标题
 st.title("🔍 数学题目审核系统")

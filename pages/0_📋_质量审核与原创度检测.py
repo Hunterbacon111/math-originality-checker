@@ -8,32 +8,20 @@ import json
 import time
 import os
 import base64
-import sys
 from openai import OpenAI
 from PIL import Image
 import io
 from dotenv import load_dotenv
 
-# 页面配置（必须最先调用）
+# 加载环境变量
+load_dotenv()
+
+# 页面配置
 st.set_page_config(
     page_title="质量审核与原创度检测",
     page_icon="📋",
     layout="wide"
 )
-
-# 加载环境变量（忽略权限错误）
-try:
-    load_dotenv()
-except Exception:
-    pass  # 如果 .env 文件被保护，从系统环境变量读取
-
-# 添加父目录到路径并导入样式
-try:
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from style import apply_llama_style
-    apply_llama_style()
-except Exception:
-    pass  # 如果样式导入失败，使用默认样式
 
 # API 配置
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -486,7 +474,7 @@ with col2:
                 except json.JSONDecodeError:
                     st.error("❌ 无法解析 API 返回结果")
     
-    # 原创度检测
+    # 原创度检测（GPT-5.1）
     elif originality_button:
         if not problem_text or not problem_text.strip():
             st.error("⚠️ 请输入题目内容或上传图片！")
