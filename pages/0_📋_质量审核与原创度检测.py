@@ -40,11 +40,8 @@ if not MISTRAL_API_KEY:
     st.error("❌ 未配置 MISTRAL_API_KEY（图像识别需要）")
     st.stop()
 
-if not DEEPSEEK_API_KEY:
-    st.warning("⚠️ 未配置 DEEPSEEK_API_KEY，将只使用 GPT-5.1")
-    DUAL_MODEL_ENABLED = False
-else:
-    DUAL_MODEL_ENABLED = True
+# DeepSeek R1 暂时禁用（准确性问题）
+DUAL_MODEL_ENABLED = False
 
 # 质量审核 Prompt
 REVIEW_PROMPT_TEMPLATE = """You are an expert mathematics educator reviewing problem quality.
@@ -319,11 +316,7 @@ with st.sidebar:
     st.header("⚙️ 系统配置")
     st.info(f"**GPT模型**: {OPENAI_MODEL}")
     st.success(f"**Vision模型**: Mistral Pixtral 📷")
-    if DUAL_MODEL_ENABLED:
-        st.success(f"**DeepSeek R1**: {DEEPSEEK_MODEL} ✅")
-        st.info("🌐 R1 支持联网搜索")
-    else:
-        st.warning("**DeepSeek**: 未配置")
+    st.info("💡 **原创度检测**: 仅使用 GPT-5.1")
     
     st.markdown("---")
     st.header("📊 功能说明")
@@ -488,174 +481,55 @@ with col2:
         else:
             st.markdown("### 🤖 双模型原创度检测")
             
-            # 为不同模型使用不同的 Prompt
+            # 使用 GPT-5.1 检测
             gpt_prompt = ORIGINALITY_PROMPT_GPT.format(problem_text=problem_text)
-            deepseek_prompt = ORIGINALITY_PROMPT_DEEPSEEK.format(problem_text=problem_text)
             
             # GPT-5.1 检测
-            with st.spinner("🔍 GPT-5.1 正在检测..."):
+            with st.spinner("🔍 GPT-5.1 正在检测原创度..."):
                 gpt_result = call_openai_api(gpt_prompt, OPENAI_API_KEY, OPENAI_MODEL)
             
-            # DeepSeek R1 检测（使用强调准确性的 Prompt）
-            deepseek_result = None
-            if DUAL_MODEL_ENABLED:
-                with st.spinner("🔍 DeepSeek R1 正在检测（已启用严格验证模式）..."):
-                    deepseek_result = call_openai_api(
-                        deepseek_prompt, 
-                        DEEPSEEK_API_KEY, 
-                        DEEPSEEK_MODEL,
-                        base_url="https://api.deepseek.com"
-                    )
-            
             # 显示结果
-            tab1, tab2, tab3 = st.tabs(["📊 对比总结", "🤖 GPT-5.1", "🌐 DeepSeek R1"])
+            st.markdown("---")
+            st.markdown("### 📊 原创度检测结果")
             
-            with tab1:
-                st.markdown("#### 🎯 双模型对比")
+            try:
+                gpt_data = json.loads(gpt_result) if isinstance(gpt_result, str) else gpt_result
                 
-                try:
-                    gpt_data = json.loads(gpt_result) if isinstance(gpt_result, str) else gpt_result
-                    
-                    if deepseek_result:
-                        ds_data = json.loads(deepseek_result) if isinstance(deepseek_result, str) else deepseek_result
-                        
-                        gpt_conclusion = gpt_data.get('originality_conclusion', 'UNKNOWN')
-                        ds_conclusion = ds_data.get('originality_conclusion', 'UNKNOWN')
-                        
-                        st.markdown("##### 🔍 检测结论对比")
-                        comp_col1, comp_col2, comp_col3 = st.columns(3)
-                        
-                        with comp_col1:
-                            st.metric("GPT-5.1", gpt_conclusion, 
-                                     delta=get_originality_emoji(gpt_conclusion))
-                        
-                        with comp_col2:
-                            st.metric("DeepSeek R1 🌐", ds_conclusion,
-                                     delta=get_originality_emoji(ds_conclusion))
-                        
-                        with comp_col3:
-                            if gpt_conclusion == ds_conclusion:
-                                st.success("✅ 结论一致\n高可信度")
-                            else:
-                                st.warning("⚠️ 结论不同\n需人工判断")
-                        
-                        st.markdown("---")
-                        st.info("💡 **建议**: 查看各模型的详细分析（切换到对应标签页）")
-                    
-                    else:
-                        st.markdown("##### 🔍 检测结论")
-                        conclusion = gpt_data.get('originality_conclusion', 'UNKNOWN')
-                        st.metric("GPT-5.1", conclusion, 
-                                 delta=get_originality_emoji(conclusion))
-                        st.info("💡 配置 DeepSeek API Key 后可启用双模型对比")
-                
-                except Exception as e:
-                    st.error(f"❌ 解析结果失败: {e}")
-            
-            # GPT-5.1 详细结果
-            with tab2:
-                try:
-                    gpt_data = json.loads(gpt_result) if isinstance(gpt_result, str) else gpt_result
-                    
-                    if "error" in gpt_data:
-                        st.error(f"❌ GPT-5.1 调用失败: {gpt_data['error']}")
-                    else:
-                        conclusion = gpt_data.get('originality_conclusion', 'UNKNOWN')
-                        st.markdown(f"### {get_originality_emoji(conclusion)} {conclusion}")
-                        
-                        similar_problems = gpt_data.get('similar_problems', [])
-                        if similar_problems:
-                            st.markdown("#### 🔍 发现的相似题目")
-                            for idx, prob in enumerate(similar_problems[:3], 1):
-                                with st.expander(f"相似题目 {idx} - 相似度: {prob.get('similarity_percentage', 0)}%"):
-                                    st.markdown(f"**来源**: {prob.get('source', '未知')}")
-                                    source_url = prob.get('source_url', '')
-                                    if source_url and source_url.strip():
-                                        if source_url.startswith('http'):
-                                            st.markdown(f"**链接**: [{source_url}]({source_url})")
-                                        else:
-                                            st.markdown(f"**详细出处**: {source_url}")
-                                    st.markdown(f"**题目内容**: {prob.get('content', '无')}")
-                                    st.markdown(f"**相似原因**: {prob.get('similarity_reason', '无')}")
-                        else:
-                            st.success("✅ 未发现高度相似的题目")
-                        
-                        unique_aspects = gpt_data.get('unique_aspects', [])
-                        if unique_aspects:
-                            st.markdown("#### ✨ 题目的独特之处")
-                            for aspect in unique_aspects:
-                                st.success(f"• {aspect}")
-                        
-                        if gpt_data.get('overall_assessment'):
-                            st.markdown("---")
-                            st.info(f"📝 **整体评估**: {gpt_data['overall_assessment']}")
-                
-                except Exception as e:
-                    st.error(f"❌ 解析 GPT-5.1 结果失败: {e}")
-            
-            # DeepSeek 详细结果
-            with tab3:
-                if not DUAL_MODEL_ENABLED:
-                    st.warning("⚠️ DeepSeek 未配置")
-                elif not deepseek_result:
-                    st.error("❌ DeepSeek 调用失败")
+                if "error" in gpt_data:
+                    st.error(f"❌ GPT-5.1 调用失败: {gpt_data['error']}")
                 else:
-                    # 添加使用说明
-                    st.info("""
-                    💡 **DeepSeek R1 结果说明**：
-                    - 会指出题目的结构、考点、题型相似性
-                    - 对于笼统来源（如"高考常见题型"）可参考，但需人工判断
-                    - 对于具体出处，请务必人工验证
-                    - 置信度越高，参考价值越大
-                    """)
+                    conclusion = gpt_data.get('originality_conclusion', 'UNKNOWN')
+                    st.markdown(f"## {get_originality_emoji(conclusion)} {conclusion}")
                     
-                    try:
-                        ds_data = json.loads(deepseek_result) if isinstance(deepseek_result, str) else deepseek_result
-                        
-                        if "error" in ds_data:
-                            st.error(f"❌ DeepSeek 调用失败: {ds_data['error']}")
-                        else:
-                            conclusion = ds_data.get('originality_conclusion', 'UNKNOWN')
-                            st.markdown(f"### {get_originality_emoji(conclusion)} {conclusion}")
-                            
-                            similar_problems = ds_data.get('similar_problems', [])
-                            if similar_problems:
-                                st.markdown("#### 🔍 发现的相似题目")
-                                for idx, prob in enumerate(similar_problems[:3], 1):
-                                    # 获取置信度
-                                    confidence = prob.get('confidence_level', '未知')
-                                    confidence_emoji = {
-                                        '高': '🟢',
-                                        '中': '🟡', 
-                                        '低': '🔴',
-                                        '未知': '⚪'
-                                    }.get(confidence, '⚪')
-                                    
-                                    with st.expander(f"相似题目 {idx} - 相似度: {prob.get('similarity_percentage', 0)}% {confidence_emoji} 置信度: {confidence}"):
-                                        st.markdown(f"**来源类型**: {prob.get('source', '未知')}")
-                                        source_url = prob.get('source_url', '')
-                                        if source_url and source_url.strip():
-                                            # 智能识别来源类型
-                                            if '记忆' in source_url or '印象' in source_url or '无准确出处' in source_url:
-                                                st.info(f"📝 **来源说明**: {source_url}")
-                                            elif '待确认' in source_url or '模糊' in source_url:
-                                                st.warning(f"⚠️ **出处**: {source_url}（需人工验证）")
-                                            elif source_url.startswith('http'):
-                                                st.markdown(f"**链接**: [{source_url}]({source_url}) ⚠️ *请验证链接有效性*")
-                                            else:
-                                                st.markdown(f"**详细出处**: {source_url}")
-                                        st.markdown(f"**相似特征**: {prob.get('content', '无')}")
-                                        st.markdown(f"**相似原因**: {prob.get('similarity_reason', '无')}")
-                            else:
-                                st.success("✅ 未发现高度相似的题目")
-                            
-                            # 显示检索说明（如果有）
-                            search_note = ds_data.get('search_note', '')
-                            if search_note:
-                                st.info(f"🔍 **检索说明**: {search_note}")
+                    similar_problems = gpt_data.get('similar_problems', [])
+                    if similar_problems:
+                        st.markdown("#### 🔍 发现的相似题目")
+                        for idx, prob in enumerate(similar_problems[:3], 1):
+                            with st.expander(f"相似题目 {idx} - 相似度: {prob.get('similarity_percentage', 0)}%"):
+                                st.markdown(f"**来源**: {prob.get('source', '未知')}")
+                                source_url = prob.get('source_url', '')
+                                if source_url and source_url.strip():
+                                    if source_url.startswith('http'):
+                                        st.markdown(f"**链接**: [{source_url}]({source_url})")
+                                    else:
+                                        st.markdown(f"**详细出处**: {source_url}")
+                                st.markdown(f"**题目内容**: {prob.get('content', '无')}")
+                                st.markdown(f"**相似原因**: {prob.get('similarity_reason', '无')}")
+                    else:
+                        st.success("✅ 未发现高度相似的题目")
                     
-                    except Exception as e:
-                        st.error(f"❌ 解析 DeepSeek 结果失败: {e}")
+                    unique_aspects = gpt_data.get('unique_aspects', [])
+                    if unique_aspects:
+                        st.markdown("#### ✨ 题目的独特之处")
+                        for aspect in unique_aspects:
+                            st.success(f"• {aspect}")
+                    
+                    if gpt_data.get('overall_assessment'):
+                        st.markdown("---")
+                        st.info(f"📝 **整体评估**: {gpt_data['overall_assessment']}")
+            
+            except Exception as e:
+                st.error(f"❌ 解析结果失败: {e}")
     
     else:
         st.info("""
