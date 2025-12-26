@@ -8,10 +8,15 @@ import json
 import time
 import os
 import base64
+import sys
 from openai import OpenAI
 from PIL import Image
 import io
 from dotenv import load_dotenv
+
+# 添加父目录到路径以导入 style
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from style import apply_llama_style
 
 # 加载环境变量
 load_dotenv()
@@ -22,6 +27,9 @@ st.set_page_config(
     page_icon="📋",
     layout="wide"
 )
+
+# 应用 Llama 3.1 风格
+apply_llama_style()
 
 # API 配置
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

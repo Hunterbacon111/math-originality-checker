@@ -10,10 +10,15 @@ import os
 import base64
 import io
 import time
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from openai import OpenAI
 from PIL import Image
 from dotenv import load_dotenv
+
+# 添加父目录到路径以导入 style
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from style import apply_llama_style
 
 # 加载环境变量
 load_dotenv()
@@ -24,6 +29,9 @@ st.set_page_config(
     page_icon="🎯",
     layout="wide"
 )
+
+# 应用 Llama 3.1 风格
+apply_llama_style()
 
 # API 配置
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")

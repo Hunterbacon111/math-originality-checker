@@ -3,6 +3,7 @@
 数学题目审核系统 - 首页
 """
 import streamlit as st
+from style import apply_llama_style
 
 # 页面配置
 st.set_page_config(
@@ -11,6 +12,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# 应用 Llama 3.1 风格
+apply_llama_style()
 
 # 主标题
 st.title("🔍 数学题目审核系统")
