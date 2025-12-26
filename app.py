@@ -3,6 +3,11 @@
 数学题目审核系统 - 首页
 """
 import streamlit as st
+import os
+from dotenv import load_dotenv
+
+# 加载环境变量（只需在主 app 中加载一次）
+load_dotenv()
 
 # 页面配置
 st.set_page_config(

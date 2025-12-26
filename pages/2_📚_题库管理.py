@@ -6,11 +6,10 @@ import streamlit as st
 import json
 import os
 from openai import OpenAI
-from dotenv import load_dotenv
 from database import db
 
-# 加载环境变量
-load_dotenv()
+# 注意：不需要在页面中调用 load_dotenv()
+# 主 app.py 已经加载了环境变量，子页面会自动继承
 
 # 页面配置
 st.set_page_config(
