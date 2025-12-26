@@ -11,8 +11,10 @@ import base64
 from openai import OpenAI
 from PIL import Image
 import io
+from dotenv import load_dotenv
 
-# 注意：环境变量已在主 app.py 中加载
+# 加载环境变量
+load_dotenv()
 
 # 页面配置
 st.set_page_config(
