@@ -410,7 +410,7 @@ with col1:
         review_button = st.button("📊 质量审核", type="primary", use_container_width=True)
     
     with button_col2:
-        originality_button = st.button("🔎 原创度检测（双模型）", type="secondary", use_container_width=True)
+        originality_button = st.button("🔎 原创度检测", type="secondary", use_container_width=True)
 
 with col2:
     st.header("📊 分析结果")
@@ -474,7 +474,7 @@ with col2:
                 except json.JSONDecodeError:
                     st.error("❌ 无法解析 API 返回结果")
     
-    # 原创度检测（双模型）
+    # 原创度检测
     elif originality_button:
         if not problem_text or not problem_text.strip():
             st.error("⚠️ 请输入题目内容或上传图片！")
