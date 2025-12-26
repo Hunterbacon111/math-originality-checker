@@ -336,7 +336,7 @@ with st.sidebar:
     - 教育价值 (0-2分)
     
     ### 2️⃣ 原创度检测
-    - 🤖 双模型交叉验证
+    - 🤖 GPT-5.1 深度分析
     - 📊 结果对比分析
     - 🔍 来源链接追溯
     """)
@@ -479,7 +479,7 @@ with col2:
         if not problem_text or not problem_text.strip():
             st.error("⚠️ 请输入题目内容或上传图片！")
         else:
-            st.markdown("### 🤖 双模型原创度检测")
+            st.markdown("### 🔍 原创度检测结果")
             
             # 使用 GPT-5.1 检测
             gpt_prompt = ORIGINALITY_PROMPT_GPT.format(problem_text=problem_text)

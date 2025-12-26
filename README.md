@@ -6,8 +6,7 @@
 
 ### 📋 质量审核与原创度检测
 - **📊 质量审核**：5维度评分（清晰度、数学严谨性、完整性、可解性、教育价值）
-- **🔎 原创度检测**：GPT-5.1 + DeepSeek R1 双模型交叉验证
-- **🌐 联网搜索**：DeepSeek R1 支持全网检索相似题目
+- **🔎 原创度检测**：GPT-5.1 深度分析题目原创性
 - **🔗 来源追溯**：提供详细的相似题目来源链接
 - **📷 图片识别**：Mistral Pixtral OCR 识别数学公式和题目
 
@@ -28,7 +27,6 @@
 - **前端框架**：Streamlit（多页面应用）
 - **AI 模型**：
   - OpenAI GPT-5.1（质量审核、原创度检测）
-  - DeepSeek R1（原创度检测、联网搜索）
   - Doubao Seed 1.6 Thinking（难度测试）
   - Mistral Pixtral（图片OCR识别）
 - **并发处理**：ThreadPoolExecutor（并行计算）
@@ -224,8 +222,8 @@ certbot --nginx -d yourdomain.com
 | `OPENAI_API_KEY` | OpenAI API 密钥（质量审核、原创度检测） | ✅ | - |
 | `OPENAI_MODEL` | OpenAI 模型名称 | ❌ | gpt-5.1-chat-latest |
 | `MISTRAL_API_KEY` | Mistral API 密钥（图片OCR识别） | ✅ | - |
-| `DEEPSEEK_API_KEY` | DeepSeek API 密钥（原创度检测） | ✅ | - |
-| `DOUBAO_API_KEY` | 豆包 API 密钥（难度测试） | ✅ | - |
+| `DOUBAO_API_KEY_1` | 豆包 API 密钥一号（难度测试） | ✅ | - |
+| `DOUBAO_API_KEY_2` | 豆包 API 密钥二号（难度测试，可选） | ❌ | - |
 | `SUPABASE_URL` | Supabase 项目 URL | ❌ | - |
 | `SUPABASE_KEY` | Supabase API Key | ❌ | - |
 
@@ -291,7 +289,6 @@ docker stats
 |------|------|------|
 | 阿里云 ECS（新加坡）| ¥200-300/月 | 2核4G，5Mbps |
 | OpenAI API | 按使用计费 | GPT-5.1 约 $0.01/请求 |
-| DeepSeek API | 按使用计费 | 非常便宜，约 ¥0.001/请求 |
 | Doubao API | 按使用计费 | 约 ¥0.005/请求 |
 | Mistral API | 按使用计费 | 图片识别约 $0.02/张 |
 | 域名 | ¥50-100/年 | 可选 |
